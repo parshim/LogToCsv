@@ -5,11 +5,11 @@ using System.Text.RegularExpressions;
 
 namespace LogToCsv
 {
-    public class LogParser
+    public class RegExParser : IParser
     {
         private readonly Regex _pattern;
 
-        public LogParser(Regex pattern)
+        public RegExParser(Regex pattern)
         {
             _pattern = pattern;
         }

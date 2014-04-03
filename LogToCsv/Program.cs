@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
+
 using CommandLine;
 
 namespace LogToCsv
@@ -17,25 +17,21 @@ namespace LogToCsv
                 cmdParser.ParseArguments(args, options);
             }
 
-            if (!File.Exists(options.Input))
+            StreamWriter streamWriter;
+            IParser parser;
+            
+            int result = AssertConditions(options, out streamWriter, out parser);
+            
+            if (result != 0)
             {
-                Console.Error.WriteLine("File {0} not found", options.Input);
+                string usage = options.GetUsage();
 
-                return -1;
+                Console.WriteLine(usage);
+
+                return result;
             }
 
-            StreamWriter streamWriter = GetWriter(options);
-
-            if (streamWriter == null)
-            {
-                return -1;
-            }
-
-            Regex pattern = new Regex(options.Pattern, RegexOptions.Compiled);
-
-            LogParser parser = new LogParser(pattern);
-
-            using (CSVWriter csvWriter = new CSVWriter(options.Delimiter, streamWriter))
+            using (CSVWriter csvWriter = new CSVWriter(',', streamWriter))
             {
                 using (StreamReader reader = new StreamReader(options.Input))
                 {
@@ -55,26 +51,33 @@ namespace LogToCsv
             return 0;
         }
 
-        private static StreamWriter GetWriter(Options options)
+        private static int AssertConditions(Options options, out StreamWriter streamWriter, out IParser parser)
         {
-            StreamWriter streamWriter;
+            streamWriter = null;
+            parser = null;
 
-            if (string.IsNullOrEmpty(options.Output))
+            if (!File.Exists(options.Input))
             {
-                streamWriter = new StreamWriter(Console.OpenStandardOutput());
+                Console.Error.WriteLine("File {0} not found", options.Input);
+                
+                return -1;
             }
-            else
+
+            streamWriter = options.GetWriter();
+
+            if (streamWriter == null)
             {
-                if (File.Exists(options.Output))
-                {
-                    Console.Error.WriteLine("Output file {0} already exists", options.Output);
-
-                    return null;
-                }
-
-                streamWriter = new StreamWriter(options.Output);
+                return -1;
             }
-            return streamWriter;
+
+            parser = options.GetParser();
+
+            if (parser == null)
+            {
+                return -1;
+            }
+
+            return 0;
         }
     }
 }
