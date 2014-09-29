@@ -27,6 +27,9 @@ namespace LogToCsv
         [Option('t', "trim", HelpText = "Trim parsed part value before write to CSV")]
         public bool Trim { get; set; }
 
+        [Option('h', "header", HelpText = "Add header to output")]
+        public bool Header { get; set; }
+
         [HelpOption]
         public string GetUsage()
         {

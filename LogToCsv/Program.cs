@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 
@@ -15,6 +16,15 @@ namespace LogToCsv
             using (Parser cmdParser = new Parser())
             {
                 cmdParser.ParseArguments(args, options);
+            }
+            
+            List<string> files = Directory.EnumerateFiles(Environment.CurrentDirectory, options.Input, SearchOption.TopDirectoryOnly).ToList();
+
+            if (files.Count == 0)
+            {
+                Console.Error.WriteLine("File {0} not found", options.Input);
+
+                return -1;
             }
 
             StreamWriter streamWriter;
@@ -33,17 +43,23 @@ namespace LogToCsv
 
             using (CSVWriter csvWriter = new CSVWriter(',', streamWriter))
             {
-                using (StreamReader reader = new StreamReader(options.Input))
+                foreach(string file in files)
                 {
-                    string[] header = parser.GetHeader();
-
-                    csvWriter.Append(header);
-
-                    IEnumerable<string[]> rows = parser.Read(reader);
-
-                    foreach (string[] row in rows)
+                    using (StreamReader reader = new StreamReader(file))
                     {
-                        csvWriter.Append(row);
+                        if (options.Header)
+                        {
+                            string[] header = parser.GetHeader();
+
+                            csvWriter.Append(header);
+                        }
+
+                        IEnumerable<string[]> rows = parser.Read(reader);
+
+                        foreach (string[] row in rows)
+                        {
+                            csvWriter.Append(row);
+                        }
                     }
                 }
             }
@@ -55,13 +71,6 @@ namespace LogToCsv
         {
             streamWriter = null;
             parser = null;
-
-            if (!File.Exists(options.Input))
-            {
-                Console.Error.WriteLine("File {0} not found", options.Input);
-                
-                return -1;
-            }
 
             streamWriter = options.GetWriter();
 
